@@ -37,70 +37,61 @@ pub enum DeviceStatus {
     Faulty,
 }
 
-pub trait NetworkDeviceTrait {
-    fn get_id(&self) -> &String;
-    fn get_name(&self) -> &String;
-    fn get_device_type(&self) -> &DeviceType;
-    fn get_status(&self) -> &DeviceStatus;
-}
-
 #[derive(Component)]
 pub struct Router {
-    pub base: NetworkDevice,
+    pub device: NetworkDevice,
     pub routing_protocol: RoutingProtocol,
 }
 
 impl Router {
     pub fn new(name: String, routing_protocol: RoutingProtocol) -> Self {
         Self {
-            base: NetworkDevice::new(name, DeviceType::Router),
+            device: NetworkDevice::new(name, DeviceType::Router),
             routing_protocol,
         }
     }
-}
 
-impl NetworkDeviceTrait for Router {
-    fn get_id(&self) -> &String {
-        &self.base.id
+    pub fn get_id(&self) -> &String {
+        &self.device.id
     }
 
-    fn get_name(&self) -> &String {
-        &self.base.name
+    pub fn get_name(&self) -> &String {
+        &self.device.name
     }
 
-    fn get_device_type(&self) -> &DeviceType {
-        &self.base.device_type
+    pub fn get_device_type(&self) -> &DeviceType {
+        &self.device.device_type
     }
 
-    fn get_status(&self) -> &DeviceStatus {
-        &self.base.status
+    pub fn get_status(&self) -> &DeviceStatus {
+        &self.device.status
     }
 }
 
 #[derive(Component)]
 pub struct Switch {
-    pub base: NetworkDevice,
+    pub device: NetworkDevice,
     pub switch_type: SwitchType,
 }
 
 impl Switch {
     pub fn new(name: String, switch_type: SwitchType) -> Self {
         Self {
-            base: NetworkDevice::new(name, DeviceType::Switch),
+            device: NetworkDevice::new(name, DeviceType::Switch),
             switch_type,
         }
     }
 }
 #[derive(Component)]
 pub struct Endpoint {
-    pub base: NetworkDevice,
+    pub device: NetworkDevice,
     pub os_type: OsType,
 }
 
 impl Endpoint {
     pub fn new(name: String, os_type: OsType) -> Self {
         Self {
-            base: NetworkDevice::new(name, DeviceType::Endpoint),
+            device: NetworkDevice::new(name, DeviceType::Endpoint),
             os_type,
         }
     }
