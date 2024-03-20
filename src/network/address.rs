@@ -16,7 +16,7 @@ impl MacAddress {
 }
 
 pub struct Ipv4Addr {
-    value: String,
+    pub value: String,
 }
 
 impl Ipv4Addr {
@@ -31,7 +31,7 @@ impl Ipv4Addr {
 }
 
 pub struct Ipv6Addr {
-    value: String,
+    pub value: String,
 }
 
 impl Ipv6Addr {

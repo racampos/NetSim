@@ -1,4 +1,4 @@
-use super::address::{ MacAddress, IpAddr, Ipv4Addr, Ipv6Addr };
+use super::address::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 pub enum Protocols {
     TCP,
@@ -6,20 +6,28 @@ pub enum Protocols {
 }
 
 pub struct Payload {
-    data: String,
+    pub data: String,
 }
 
 pub struct Ipv4Packet {
-    src: Ipv4Addr,
-    dest: Ipv4Addr,
-    tos: u8,
-    ttl: u8,
-    protocol: Protocols,
-    total_length: Option<u16>,  // Using Option to represent potentially uninitialized state (similar to None in Python).
+    pub src: Ipv4Addr,
+    pub dest: Ipv4Addr,
+    pub tos: u8,
+    pub ttl: u8,
+    pub protocol: Protocols,
+    pub total_length: Option<u16>, // Using Option to represent potentially uninitialized state (similar to None in Python).
+    pub payload: Payload,
 }
 
 impl Ipv4Packet {
-    fn new(src: Ipv4Addr, dest: Ipv4Addr, payload: Payload, tos: u8, ttl: u8, protocol: Protocols) -> Self {
+    pub fn new(
+        src: Ipv4Addr,
+        dest: Ipv4Addr,
+        payload: Payload,
+        tos: u8,
+        ttl: u8,
+        protocol: Protocols,
+    ) -> Self {
         Self {
             src,
             dest,
@@ -27,23 +35,32 @@ impl Ipv4Packet {
             ttl,
             protocol,
             total_length: None,
+            payload,
         }
     }
 }
 
 pub struct Ipv6Packet {
-    src: Ipv6Addr,
-    dest: Ipv6Addr,
-    traffic_class: u8,
-    hop_limit: u8,
-    protocol: Protocols,
-    payload_length: Option<u16>,
-    flow_label: Option<u32>,
-    next_header: Option<u8>,  // Assuming a similar optional field as Python's None.
+    pub src: Ipv6Addr,
+    pub dest: Ipv6Addr,
+    pub traffic_class: u8,
+    pub hop_limit: u8,
+    pub protocol: Protocols,
+    pub payload_length: Option<u16>,
+    pub flow_label: Option<u32>,
+    pub next_header: Option<u8>, // Assuming a similar optional field as Python's None.
+    pub payload: Payload,
 }
 
 impl Ipv6Packet {
-    fn new(src: Ipv6Addr, dest: Ipv6Addr, payload: Payload, traffic_class: u8, hop_limit: u8, protocol: Protocols) -> Self {
+    pub fn new(
+        src: Ipv6Addr,
+        dest: Ipv6Addr,
+        payload: Payload,
+        traffic_class: u8,
+        hop_limit: u8,
+        protocol: Protocols,
+    ) -> Self {
         Self {
             src,
             dest,
@@ -53,6 +70,7 @@ impl Ipv6Packet {
             payload_length: None,
             flow_label: None,
             next_header: None,
+            payload,
         }
     }
 }
@@ -63,26 +81,22 @@ pub enum IpPacket {
 }
 
 impl IpPacket {
-    fn new(src: IpAddr, dest: IpAddr, payload: Payload, protocol: Protocols) -> Self {
+    pub fn new(src: IpAddr, dest: IpAddr, payload: Payload, protocol: Protocols) -> Self {
         match src {
-            IpAddr::V4(src) => {
-                match dest {
-                    IpAddr::V4(dest) => {
-                        IpPacket::V4(Ipv4Packet::new(src, dest, payload, 0, 0, protocol))
-                    },
-                    IpAddr::V6(_) => {
-                        panic!("Destination address is not an IPv4 address");
-                    },
+            IpAddr::V4(src) => match dest {
+                IpAddr::V4(dest) => {
+                    IpPacket::V4(Ipv4Packet::new(src, dest, payload, 0, 0, protocol))
+                }
+                IpAddr::V6(_) => {
+                    panic!("Destination address is not an IPv4 address");
                 }
             },
-            IpAddr::V6(src) => {
-                match dest {
-                    IpAddr::V6(dest) => {
-                        IpPacket::V6(Ipv6Packet::new(src, dest, payload, 0, 0, protocol))
-                    },
-                    IpAddr::V4(_) => {
-                        panic!("Destination address is not an IPv6 address");
-                    },
+            IpAddr::V6(src) => match dest {
+                IpAddr::V6(dest) => {
+                    IpPacket::V6(Ipv6Packet::new(src, dest, payload, 0, 0, protocol))
+                }
+                IpAddr::V4(_) => {
+                    panic!("Destination address is not an IPv6 address");
                 }
             },
         }
