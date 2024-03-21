@@ -1,111 +1,75 @@
+use super::address::{IpAddr, Ipv4Addr, Ipv6Addr, MacAddress};
+use super::interface::Interface;
+
 use bevy::prelude::*;
-use bevy::utils::Uuid;
 
-pub struct NetworkDevice {
-    id: String,
-    name: String,
-    device_type: DeviceType,
-    status: DeviceStatus,
+pub trait NetworkDevice {
+    fn ping(&self, ip: IpAddr) -> bool;
 }
 
-impl NetworkDevice {
-    fn new(name: String, device_type: DeviceType) -> Self {
-        Self {
-            id: Self::generate_id(&device_type),
-            name,
-            device_type,
-            status: DeviceStatus::Active,
-        }
-    }
-
-    fn generate_id(device_type: &DeviceType) -> String {
-        format!("{:?}-{}", device_type, Uuid::new_v4())
-    }
+pub enum RouterModel {
+    Generic,
+    Cisco1841,
+    Cisco1921,
+    Cisco2911,
+    Cisco4331,
+    Cisco4431,
+    Cisco4451,
 }
 
-#[derive(Debug)]
-pub enum DeviceType {
-    Router,
-    Switch,
-    Endpoint,
-}
-
-// Enumerate possible device statuses
-pub enum DeviceStatus {
-    Active,
-    Inactive,
-    Faulty,
+pub enum SwitchModel {
+    Generic,
+    Cisco2960,
+    Cisco3560,
+    Cisco3750,
+    Cisco3850,
 }
 
 #[derive(Component)]
 pub struct Router {
-    pub device: NetworkDevice,
-    pub routing_protocol: RoutingProtocol,
+    pub model: RouterModel,
+    pub interfaces: Vec<Interface>,
 }
 
 impl Router {
-    pub fn new(name: String, routing_protocol: RoutingProtocol) -> Self {
+    pub fn new(model: RouterModel) -> Self {
         Self {
-            device: NetworkDevice::new(name, DeviceType::Router),
-            routing_protocol,
+            model,
+            interfaces: Vec::new(),
         }
     }
 
-    pub fn get_id(&self) -> &String {
-        &self.device.id
+    pub fn add_interface(&mut self, interface: Interface) {
+        self.interfaces.push(interface);
     }
+}
 
-    pub fn get_name(&self) -> &String {
-        &self.device.name
-    }
-
-    pub fn get_device_type(&self) -> &DeviceType {
-        &self.device.device_type
-    }
-
-    pub fn get_status(&self) -> &DeviceStatus {
-        &self.device.status
+impl NetworkDevice for Router {
+    // TODO: implement ping
+    fn ping(&self, ip: IpAddr) -> bool {
+        true
     }
 }
 
 #[derive(Component)]
 pub struct Switch {
-    pub device: NetworkDevice,
-    pub switch_type: SwitchType,
+    pub model: SwitchModel,
 }
 
 impl Switch {
-    pub fn new(name: String, switch_type: SwitchType) -> Self {
-        Self {
-            device: NetworkDevice::new(name, DeviceType::Switch),
-            switch_type,
-        }
+    pub fn new(model: SwitchModel) -> Self {
+        Self { model }
     }
 }
 #[derive(Component)]
 pub struct Endpoint {
-    pub device: NetworkDevice,
     pub os_type: OsType,
 }
 
 impl Endpoint {
-    pub fn new(name: String, os_type: OsType) -> Self {
-        Self {
-            device: NetworkDevice::new(name, DeviceType::Endpoint),
-            os_type,
-        }
+    pub fn new(os_type: OsType) -> Self {
+        Self { os_type }
     }
-}
-
-pub enum RoutingProtocol {
-    RIP,
-    OSPF,
-    BGP,
-}
-
-pub enum SwitchType {
-    Layer2,
-    Layer3,
 }
 
 pub enum OsType {

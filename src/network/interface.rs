@@ -1,63 +1,57 @@
-pub struct Interface {
-    pub name: String,
+use super::address::{IpAddr, MacAddress};
+
+pub enum Speed {
+    TenMbps,
+    HundredMbps,
+    OneGbps,
 }
 
-impl Interface {
-    pub fn new(name: String) -> Self {
-        Self { name }
-    }
-}
-
-pub struct EthernetInterface {
-    pub interface: Interface,
-    pub mac_address: String,
-    pub speed: u32, // in Mbps
-}
-
-impl EthernetInterface {
-    pub fn new(name: String, mac_address: String, speed: u32) -> Self {
-        Self { 
-            interface: Interface::new(name),
-            mac_address,
-            speed,
-        }
-    }
+pub enum Interface {
+    FastEthernet(FastEthernet),
+    GigabitEthernet(GigabitEthernet),
+    Serial(Serial),
 }
 
 pub struct FastEthernet {
-    pub interface: EthernetInterface,
+    pub name: String,
+    pub mac_address: MacAddress,
+    pub ip_addresses: Vec<IpAddr>,
+    pub speed: Speed,
 }
 
 impl FastEthernet {
-    pub fn new(name: String, mac_address: String) -> Self {
+    pub fn new(name: String, mac_address: MacAddress, ip_addresses: Vec<IpAddr>) -> Self {
         Self {
-            interface: EthernetInterface::new(name, mac_address, 100),
+            name,
+            mac_address,
+            ip_addresses,
+            speed: Speed::HundredMbps,
         }
     }
 }
 
 pub struct GigabitEthernet {
-    pub interface: EthernetInterface,
+    pub mac_address: MacAddress,
+    pub ip_addresses: Vec<IpAddr>,
+    pub speed: Speed,
 }
 
 impl GigabitEthernet {
-    pub fn new(name: String, mac_address: String) -> Self {
+    pub fn new(mac_address: MacAddress, ip_addresses: Vec<IpAddr>) -> Self {
         Self {
-            interface: EthernetInterface::new(name, mac_address, 1000),
+            mac_address,
+            ip_addresses,
+            speed: Speed::OneGbps,
         }
     }
 }
 
 pub struct Serial {
-    pub interface: Interface,
-    pub baud_rate: u32,
+    pub ip_addresses: Vec<IpAddr>,
 }
 
 impl Serial {
-    pub fn new(name: String, baud_rate: u32) -> Self {
-        Self {
-            interface: Interface::new(name),
-            baud_rate,
-        }
+    pub fn new(ip_addresses: Vec<IpAddr>) -> Self {
+        Self { ip_addresses }
     }
 }

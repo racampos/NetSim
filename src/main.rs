@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use netsim::network::device::{Endpoint, OsType, Router, RoutingProtocol, Switch, SwitchType};
+use netsim::network::address::{IpAddr, Ipv4Addr, Ipv6Addr, MacAddress};
+use netsim::network::device::{Endpoint, OsType, Router, RouterModel, Switch, SwitchModel};
+use netsim::network::interface::{FastEthernet, GigabitEthernet, Interface, Serial, Speed};
+use netsim::network::utils::Name;
 
 fn main() {
     App::new()
@@ -10,12 +13,24 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Router::new("Router 1".to_string(), RoutingProtocol::OSPF));
+    // Create a router
+    let mut router = Router::new(RouterModel::Generic);
+    // Create a FastEthernet interface
+    let fe00_ipv4_addr = Ipv4Addr::new("192.168.100.1".to_string());
+    let fe00_ipv6_addr = Ipv6Addr::new("2001:db8:123:456::1".to_string());
+    let int_fe00 = Interface::FastEthernet(FastEthernet::new(
+        "FastEthernet0/0".to_string(),
+        MacAddress::random(),
+        vec![IpAddr::V4(fe00_ipv4_addr), IpAddr::V6(fe00_ipv6_addr)],
+    ));
+    // Add the interface to the router
+    router.add_interface(int_fe00);
+    // Spawn the router entity
+    commands.spawn((router, Name("R1".to_string())));
 
-    commands.spawn(Switch::new("Switch 1".to_string(), SwitchType::Layer2));
+    commands.spawn(Switch::new(SwitchModel::Generic));
 
-    // Spawn an endpoint entity
-    commands.spawn(Endpoint::new("Endpoint 1".to_string(), OsType::Linux));
+    commands.spawn(Endpoint::new(OsType::Linux));
 }
 
 fn update_routers() {
