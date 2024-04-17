@@ -1,39 +1,36 @@
+use once_cell::sync::Lazy;
+use rand::Rng;
 use regex::Regex;
-use uuid::Uuid;
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacAddress {
     pub address: String,
 }
 
 impl MacAddress {
-    pub fn new(address: String) -> Self {
-        let mac_address_regex = Regex::new(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$").unwrap();
-        // TODO: implement a custom error type
-        if !mac_address_regex.is_match(&address) {
-            panic!("Invalid MAC address format");
+    pub fn new(address: String) -> Result<Self, String> {
+        static MAC_ADDRESS_REGEX: Lazy<Regex> = Lazy::new(|| {
+            Regex::new(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+                .expect("Failed to compile regex")
+        });
+
+        if MAC_ADDRESS_REGEX.is_match(&address) {
+            Ok(Self { address })
+        } else {
+            Err("Invalid MAC address format".to_string())
         }
-        Self { address }
     }
 
     pub fn random() -> Self {
-        // Generate a random UUID
-        let uuid = Uuid::new_v4();
-
-        // Get the simple format which omits hyphens
-        let simple = uuid.simple().to_string();
-
-        // Take the first 12 characters (6 bytes) to simulate a MAC address
-        // MAC addresses are typically represented in hexadecimal format, separated by colons
-        let mut mac_parts = Vec::new();
-        for i in (0..12).step_by(2) {
-            mac_parts.push(&simple[i..i + 2]);
-        }
-
-        // Join the parts using colons to format it as a typical MAC address
-        Self::new(mac_parts.join(":").to_uppercase())
+        let fixed_oid = "00:11:22";
+        let mut rng = rand::thread_rng();
+        let random_bytes: Vec<String> =
+            (0..3).map(|_| format!("{:02X}", rng.gen::<u8>())).collect();
+        let mac_address = format!("{}:{}", fixed_oid, random_bytes.join(":"));
+        Self::new(mac_address).unwrap()
     }
 }
-
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Ipv4Addr {
     pub octets: Vec<u8>,
 }
@@ -53,7 +50,11 @@ impl Ipv4Addr {
     }
 
     pub fn to_string(&self) -> String {
-        self.octets.iter().map(|octet| octet.to_string()).collect::<Vec<String>>().join(".")
+        self.octets
+            .iter()
+            .map(|octet| octet.to_string())
+            .collect::<Vec<String>>()
+            .join(".")
     }
 
     pub fn get_network_address(&self, subnet_mask: &Ipv4Addr) -> Ipv4Addr {
@@ -69,6 +70,7 @@ impl Ipv4Addr {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Ipv6Addr {
     pub value: String,
 }

@@ -1,4 +1,18 @@
-use super::address::{IpAddr, Ipv4Addr, Ipv6Addr};
+use super::address::{IpAddr, Ipv4Addr, Ipv6Addr, MacAddress};
+use bevy::prelude::*;
+
+pub enum EthernetPayload {
+    IP(IpPacket),
+    ICMP,
+    ARP,
+    Dummy,
+}
+#[derive(Component)]
+pub struct EthernetFrame {
+    pub src: MacAddress,
+    pub dest: MacAddress,
+    pub payload: EthernetPayload,
+}
 
 pub enum Protocols {
     TCP,

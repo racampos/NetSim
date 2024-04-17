@@ -11,6 +11,7 @@ pub enum RouterModel {
     Generic,
     Cisco1841,
     Cisco1921,
+    Cisco2901,
     Cisco2911,
     Cisco4331,
     Cisco4431,
