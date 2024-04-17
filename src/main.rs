@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use netsim::network::address::{IpAddr, Ipv4Addr, Ipv6Addr, MacAddress};
 use netsim::network::device::{Endpoint, OsType, Router, RouterModel, Switch, SwitchModel};
 use netsim::network::interface::{EthernetInterface, Interface, InterfaceType, SerialInterface};
-use netsim::network::utils::Name;
 
 fn main() {
     App::new()
@@ -13,31 +12,42 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    // Create a router
-    let mut router = Router::new(RouterModel::Generic);
     // Create a FastEthernet interface
-    let mut interface =
+    let mut fe_int =
         EthernetInterface::new("FastEthernet0/0".to_string(), InterfaceType::FastEthernet);
-    interface.set_ipv4_address(Ipv4Addr::new("192.168.100.1".to_string()));
-    interface.add_ipv6_address(Ipv6Addr::new("2001:db8:123:456::1".to_string()));
+        fe_int.set_ipv4_address(Ipv4Addr::new("192.168.100.1".to_string()));
+        fe_int.add_ipv6_address(Ipv6Addr::new("2001:db8:123:456::1".to_string()));
 
-    commands.spawn((
-        Interface::Ethernet(interface),
-        Name("FastEthernet0/0".to_string()),
-    ));
+    // Spawn the interface entity
+    let int_id = commands.spawn((
+        Interface::Ethernet(fe_int),
+        Name::new("FastEthernet0/0"),
+    )).id();
 
-    // Add the interface to the router
-    router.add_interface(Interface::Ethernet(interface));
     // Spawn the router entity
-    commands.spawn((router, Name("R1".to_string())));
+    let router_id = commands.spawn((
+        Router::new(RouterModel::Generic), 
+        Name::new("R1",
+    ))).id();
+
+    if let Ok(mut router) = commands.entity(router_id).get_mut::<Router>() {
+        router.add_interface(int_id);
+    }
+
+    if let Ok(mut interface) = commands.entity(int_id).get_mut::<Interface>() {
+        interface.attach_to_device(Some(router_id));
+    }
+
 
     commands.spawn(Switch::new(SwitchModel::Generic));
 
     commands.spawn(Endpoint::new(OsType::Linux));
 }
 
-fn update_routers() {
-    println!("Updating routers...");
+fn update_routers(query: Query<(&Router, &Name)>) {
+    for (router, name) in &query {
+        println!("Router {} is of model {:?}.", name, router.model);
+    }
 }
 
 fn update_switches() {

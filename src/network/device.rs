@@ -6,7 +6,7 @@ use bevy::prelude::*;
 pub trait NetworkDevice {
     fn ping(&self, ip: IpAddr) -> bool;
 }
-
+#[derive(Debug)]
 pub enum RouterModel {
     Generic,
     Cisco1841,
@@ -18,6 +18,7 @@ pub enum RouterModel {
     Cisco4451,
 }
 
+#[derive(Debug)]
 pub enum SwitchModel {
     Generic,
     Cisco2960,
@@ -26,10 +27,10 @@ pub enum SwitchModel {
     Cisco3850,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Router {
     pub model: RouterModel,
-    pub interfaces: Vec<Interface>,
+    pub interfaces: Vec<Entity>,
 }
 
 impl Router {
@@ -40,7 +41,7 @@ impl Router {
         }
     }
 
-    pub fn add_interface(&mut self, interface: Interface) {
+    pub fn add_interface(&mut self, interface: Entity) {
         self.interfaces.push(interface);
     }
 }

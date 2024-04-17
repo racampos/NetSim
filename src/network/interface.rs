@@ -13,6 +13,17 @@ pub enum Interface {
     Serial(SerialInterface),
 }
 
+impl Interface {
+    pub fn attach_to_device(&mut self, device: Entity) {
+        match self {
+            Interface::Ethernet(interface) => {
+                interface.device = Some(device);
+            }
+            Interface::Serial(_) => {}
+        }
+    }
+}
+
 pub struct ArpTable {
     entries: HashMap<Ipv4Addr, MacAddress>,
 }
@@ -35,6 +46,7 @@ impl ArpTable {
 
 pub struct EthernetInterface {
     pub interface_type: InterfaceType,
+    pub device: Option<Entity>,
     pub name: String,
     pub mac_address: MacAddress,
     pub ipv4_address: Option<Ipv4Addr>,
@@ -47,6 +59,7 @@ impl EthernetInterface {
         Self {
             name,
             interface_type: interface_type,
+            device: None,
             mac_address: MacAddress::random(),
             ipv4_address: None,
             ipv6_addresses: Vec::new(),
