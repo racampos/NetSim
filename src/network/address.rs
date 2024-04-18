@@ -30,6 +30,7 @@ impl MacAddress {
         Self::new(mac_address).unwrap()
     }
 }
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Ipv4Addr {
     pub octets: Vec<u8>,
