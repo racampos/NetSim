@@ -114,16 +114,40 @@ fn connect_interfaces(
     commands.spawn(Link::new(source_entity, dest_entity));
 }
 
-fn transmit_frames(mut query_link: Query<&Link>) {
-    let link = query_link.single();
-    link.transmit_frame();
+fn transmit_frames(
+    links: Query<&Link>,
+    mut interfaces: Query<&mut Interface>,
+) {
+    let link = links.single();
+    match interfaces.get_mut(link.0) {
+        Ok(mut int_1) => {
+            if let Interface::Ethernet(int) = &mut *int_1 {
+                let frame = int.dequeue_frame(Direction::Out);
+                if let Some(frame) = frame {
+                    match interfaces.get_mut(link.1) {
+                        Ok(mut int_2) => {
+                            if let Interface::Ethernet(int) = &mut *int_2 {
+                                int.enqueue_frame(frame, Direction::In);
+                            }
+                        }
+                        Err(_) => {
+                            println!("Destination interface not found.")
+                        }
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            println!("Source interface not found.")
+        }
+    }
 }
 
-fn update_frames(mut query_interface: Query<&mut Interface, With<SourceInterface>>) {
+fn update_frames(mut query_interface: Query<&mut Interface, With<DestinationInterface>>) {
     let interface = query_interface.single();
 
     if let Interface::Ethernet(int) = interface {
-        let frame = int.out_queue.peek();
+        let frame = int.in_queue.peek();
         match frame {
             Some(f) => println!("Peeked frame: {:?}", f),
             None => println!("No frames in the queue"),

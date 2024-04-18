@@ -2,7 +2,7 @@ use super::interface::{Direction, Interface};
 use bevy::prelude::*;
 
 #[derive(Component)]
-pub struct Link(Entity, Entity);
+pub struct Link(pub Entity, pub Entity);
 
 impl Link {
     pub fn new(source: Entity, destination: Entity) -> Self {
