@@ -17,7 +17,7 @@ struct VlanTag {
     vid: [u8; 2],
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct EthernetFrame {
     dest: MacAddress,
     src: MacAddress,

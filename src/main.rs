@@ -23,9 +23,9 @@ fn main() {
             Update,
             (
                 transmit_frames,
-                peek_queues_1.after(transmit_frames),
-                update_interfaces.after(peek_queues_1),
-                peek_queues_2.after(update_interfaces),
+                peek_queues.after(transmit_frames),
+                update_interfaces.after(peek_queues),
+                extract_frames_system.after(update_interfaces),
             ),
         )
         .run();
@@ -105,7 +105,7 @@ fn transmit_frames(links: Query<&Link>, mut interfaces: Query<&mut Interface>) {
     }
 }
 
-fn peek_queues_1(query_interface: Query<(&mut Interface, &Name)>) {
+fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
     println!("--------------------------------");
     println!("Time step");
     for (interface, name) in query_interface.iter() {
@@ -125,30 +125,32 @@ fn peek_queues_1(query_interface: Query<(&mut Interface, &Name)>) {
     }
 }
 
-fn peek_queues_2(query_interface: Query<(&mut Interface, &Name)>) {
-    println!("--------------------------------");
-    println!("Time step");
-    for (interface, name) in query_interface.iter() {
-        if let Interface::Ethernet(int) = interface {
-            println!("  Peeking queues for interface {:?}", name);
-            let frame = int.in_queue.peek();
-            match frame {
-                Some(f) => println!("    Incoming queue: {:?}", f),
-                None => println!("    Incoming queue: Empty"),
-            }
-            let frame = int.out_queue.peek();
-            match frame {
-                Some(f) => println!("    Outgoing queue: {:?}", f),
-                None => println!("    Outgoing queue: Empty"),
-            }
-        }
-    }
-}
 
 fn update_interfaces(mut query_interface: Query<(&mut Interface, &Name)>) {
     for (mut interface, name) in query_interface.iter_mut() {
         if let Interface::Ethernet(int) = &mut *interface {
-            int.short_circuit_queues();
+            // int.short_circuit_queues();
+        }
+    }
+}
+
+fn extract_frames_system(
+    mut interfaces: Query<&mut Interface>,
+    frame_query: Query<&EthernetFrame>,
+) {
+    for mut interface in interfaces.iter_mut() {
+        if let Interface::Ethernet(int) = &mut *interface {
+            let mut frames = Vec::new();
+
+            while !int.in_queue.is_empty() {
+                if let Ok(frame) = frame_query.get(int.in_queue.dequeue().unwrap()) {
+                    frames.push(frame);
+                } else {
+                    println!("Failed to find EthernetFrame for entity {:?}", int.in_queue.dequeue().unwrap());
+                }
+            }
+            // Now `frames` contains all EthernetFrame components from the in_queue
+            println!("Extracted frames: {:?}", frames);
         }
     }
 }

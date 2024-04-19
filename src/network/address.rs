@@ -38,6 +38,10 @@ impl MacAddress {
         let mac_address = format!("{}:{}", fixed_oid, random_bytes.join(":"));
         Self::new(mac_address).unwrap()
     }
+
+    pub fn is_broadcast(&self) -> bool {
+        self.bytes.iter().all(|&byte| byte == 0xFF)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
