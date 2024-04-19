@@ -4,7 +4,7 @@ use regex::Regex;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacAddress {
-    pub address: String,
+    bytes: [u8; 6],
 }
 
 impl MacAddress {
@@ -15,7 +15,16 @@ impl MacAddress {
         });
 
         if MAC_ADDRESS_REGEX.is_match(&address) {
-            Ok(Self { address })
+            let bytes: Result<Vec<u8>, _> = address
+                .split(|c| c == ':' || c == '-')
+                .map(|byte| u8::from_str_radix(byte, 16))
+                .collect();
+            match bytes {
+                Ok(bytes) => Ok(Self {
+                    bytes: [bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]],
+                }),
+                Err(_) => Err("Invalid MAC address format".to_string()),
+            }
         } else {
             Err("Invalid MAC address format".to_string())
         }

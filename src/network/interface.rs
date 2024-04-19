@@ -11,13 +11,15 @@ pub struct DestinationInterface;
 
 pub struct Queue<T> {
     elements: VecDeque<T>,
+    capacity: u32,
 }
 
 impl<T> Queue<T> {
     // Creates a new empty queue
-    pub fn new() -> Self {
+    pub fn new(capacity: u32) -> Self {
         Queue {
             elements: VecDeque::new(),
+            capacity,
         }
     }
 
@@ -91,6 +93,7 @@ impl ArpTable {
     }
 }
 
+#[derive(Component)]
 pub struct EthernetInterface {
     pub interface_type: InterfaceType,
     pub device: Option<Entity>,
@@ -116,8 +119,8 @@ impl EthernetInterface {
             ipv4_address: None,
             ipv6_addresses: Vec::new(),
             arp_table: ArpTable::new(),
-            in_queue: Queue::new(),
-            out_queue: Queue::new(),
+            in_queue: Queue::new(0x2000000),  // 32 MB
+            out_queue: Queue::new(0x2000000), // 32 MB
         }
     }
 
@@ -140,6 +143,14 @@ impl EthernetInterface {
         match direction {
             Direction::In => self.in_queue.dequeue(),
             Direction::Out => self.out_queue.dequeue(),
+        }
+    }
+
+    /// Short-circuits the queues by moving the first item from the in_queue to the out_queue
+    /// This is useful for testing purposes
+    pub fn short_circuit_queues(&mut self) {
+        if let Some(item) = self.in_queue.dequeue() {
+            self.out_queue.enqueue(item);
         }
     }
 }

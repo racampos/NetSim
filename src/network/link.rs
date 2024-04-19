@@ -9,39 +9,29 @@ impl Link {
         Link(source, destination)
     }
 
-    pub fn transmit_frame(&self) {
-        let mut world = World::default();
-        match world.get_mut::<Interface>(self.0) {
-            Some(mut source) => {
-                if let Interface::Ethernet(int) = &mut *source {
-                    let frame = int.dequeue_frame(Direction::Out);
-                    if let Some(frame) = frame {
-                        match world.get_mut::<Interface>(self.1) {
-                            Some(mut destination) => {
-                                if let Interface::Ethernet(int) = &mut *destination {
-                                    int.enqueue_frame(frame, Direction::In);
+    pub fn transmit_frame(
+        source: Entity,
+        destination: Entity,
+        interfaces: &mut Query<&mut Interface>,
+    ) {
+        match interfaces.get_mut(source) {
+            Ok(mut src_interface) => {
+                if let Interface::Ethernet(src_eth_interface) = &mut *src_interface {
+                    if let Some(frame) = src_eth_interface.dequeue_frame(Direction::Out) {
+                        match interfaces.get_mut(destination) {
+                            Ok(mut dest_interface) => {
+                                if let Interface::Ethernet(dest_eth_interface) =
+                                    &mut *dest_interface
+                                {
+                                    dest_eth_interface.enqueue_frame(frame, Direction::In);
                                 }
                             }
-                            None => {
-                                println!("Destination interface not found.")
-                            }
+                            Err(_) => println!("Destination interface not found."),
                         }
                     }
                 }
             }
-            None => {
-                println!("Source interface not found.")
-            }
+            Err(_) => println!("Source interface not found."),
         }
-        // let mut source = world.get_mut::<Interface>(self.0).unwrap();
-        // if let Interface::Ethernet(int) = &mut *source {
-        //     let frame = int.dequeue_frame(Direction::Out);
-        //     if let Some(frame) = frame {
-        //         let mut destination = world.get_mut::<Interface>(self.1).unwrap();
-        //         if let Interface::Ethernet(int) = &mut *destination {
-        //             int.enqueue_frame(frame, Direction::In);
-        //         }
-        //     }
-        // }
     }
 }

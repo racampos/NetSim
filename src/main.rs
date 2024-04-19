@@ -15,14 +15,19 @@ fn main() {
             Startup,
             (
                 setup,
-                add_frame_to_interface.after(setup),
-                connect_interfaces.after(add_frame_to_interface),
+                add_frame_to_source_interface.after(setup),
+                connect_interfaces.after(add_frame_to_source_interface),
             ),
         )
-        .add_systems(Update, transmit_frames)
-        // .add_systems(Update, update_routers)
-        // .add_systems(Update, update_interfaces)
-        .add_systems(Update, update_frames)
+        .add_systems(
+            Update,
+            (
+                transmit_frames,
+                peek_queues_1.after(transmit_frames),
+                update_interfaces.after(peek_queues_1),
+                peek_queues_2.after(update_interfaces),
+            ),
+        )
         .run();
 }
 
@@ -61,36 +66,12 @@ fn setup(mut commands: Commands) {
         .id();
 
     let frame = commands.spawn((
-        EthernetFrame {
-            src: mac_1,
-            dest: mac_2,
-            payload: EthernetPayload::Dummy,
-        },
+        EthernetFrame::new(mac_1, mac_2, EthernetPayload::Dummy),
         Name::new("ARP Frame"),
     ));
 }
 
-fn update_routers(query: Query<(&Router, &Name)>) {
-    for (router, name) in &query {
-        println!("Router {} is of model {:?}.", name, router.model);
-    }
-}
-
-fn update_interfaces(query: Query<(&Interface, &Name)>) {
-    for (interface, name) in &query {
-        println!(
-            "Interface {} is of type {:?}.",
-            name,
-            if let Interface::Ethernet(e) = interface {
-                &e.interface_type
-            } else {
-                &InterfaceType::FastEthernet
-            }
-        );
-    }
-}
-
-fn add_frame_to_interface(
+fn add_frame_to_source_interface(
     query_frame: Query<(Entity, &EthernetFrame)>,
     mut query_interface: Query<&mut Interface, With<SourceInterface>>,
 ) {
@@ -114,43 +95,60 @@ fn connect_interfaces(
     commands.spawn(Link::new(source_entity, dest_entity));
 }
 
-fn transmit_frames(
-    links: Query<&Link>,
-    mut interfaces: Query<&mut Interface>,
-) {
-    let link = links.single();
-    match interfaces.get_mut(link.0) {
-        Ok(mut int_1) => {
-            if let Interface::Ethernet(int) = &mut *int_1 {
-                let frame = int.dequeue_frame(Direction::Out);
-                if let Some(frame) = frame {
-                    match interfaces.get_mut(link.1) {
-                        Ok(mut int_2) => {
-                            if let Interface::Ethernet(int) = &mut *int_2 {
-                                int.enqueue_frame(frame, Direction::In);
-                            }
-                        }
-                        Err(_) => {
-                            println!("Destination interface not found.")
-                        }
-                    }
-                }
+fn transmit_frames(links: Query<&Link>, mut interfaces: Query<&mut Interface>) {
+    for link in links.iter() {
+        // Transmit frame from link.0 to link.1
+        Link::transmit_frame(link.0, link.1, &mut interfaces);
+
+        // Transmit frame from link.1 to link.0
+        Link::transmit_frame(link.1, link.0, &mut interfaces);
+    }
+}
+
+fn peek_queues_1(query_interface: Query<(&mut Interface, &Name)>) {
+    println!("--------------------------------");
+    println!("Time step");
+    for (interface, name) in query_interface.iter() {
+        if let Interface::Ethernet(int) = interface {
+            println!("  Peeking queues for interface {:?}", name);
+            let frame = int.in_queue.peek();
+            match frame {
+                Some(f) => println!("    Incoming queue: {:?}", f),
+                None => println!("    Incoming queue: Empty"),
             }
-        }
-        Err(_) => {
-            println!("Source interface not found.")
+            let frame = int.out_queue.peek();
+            match frame {
+                Some(f) => println!("    Outgoing queue: {:?}", f),
+                None => println!("    Outgoing queue: Empty"),
+            }
         }
     }
 }
 
-fn update_frames(mut query_interface: Query<&mut Interface, With<DestinationInterface>>) {
-    let interface = query_interface.single();
+fn peek_queues_2(query_interface: Query<(&mut Interface, &Name)>) {
+    println!("--------------------------------");
+    println!("Time step");
+    for (interface, name) in query_interface.iter() {
+        if let Interface::Ethernet(int) = interface {
+            println!("  Peeking queues for interface {:?}", name);
+            let frame = int.in_queue.peek();
+            match frame {
+                Some(f) => println!("    Incoming queue: {:?}", f),
+                None => println!("    Incoming queue: Empty"),
+            }
+            let frame = int.out_queue.peek();
+            match frame {
+                Some(f) => println!("    Outgoing queue: {:?}", f),
+                None => println!("    Outgoing queue: Empty"),
+            }
+        }
+    }
+}
 
-    if let Interface::Ethernet(int) = interface {
-        let frame = int.in_queue.peek();
-        match frame {
-            Some(f) => println!("Peeked frame: {:?}", f),
-            None => println!("No frames in the queue"),
+fn update_interfaces(mut query_interface: Query<(&mut Interface, &Name)>) {
+    for (mut interface, name) in query_interface.iter_mut() {
+        if let Interface::Ethernet(int) = &mut *interface {
+            int.short_circuit_queues();
         }
     }
 }

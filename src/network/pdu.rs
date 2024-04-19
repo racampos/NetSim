@@ -8,11 +8,36 @@ pub enum EthernetPayload {
     ARP,
     Dummy,
 }
+
+#[derive(Debug)]
+struct VlanTag {
+    tpid: [u8; 2],
+    pcp: u8,
+    dei: u8,
+    vid: [u8; 2],
+}
+
 #[derive(Component)]
 pub struct EthernetFrame {
-    pub src: MacAddress,
-    pub dest: MacAddress,
-    pub payload: EthernetPayload,
+    dest: MacAddress,
+    src: MacAddress,
+    vlan: Option<VlanTag>,
+    length: [u8; 2],
+    payload: EthernetPayload,
+    fcs: [u8; 4],
+}
+
+impl EthernetFrame {
+    pub fn new(src: MacAddress, dest: MacAddress, payload: EthernetPayload) -> Self {
+        Self {
+            dest,
+            src,
+            vlan: None,
+            length: [0; 2],
+            payload,
+            fcs: [0; 4],
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -22,7 +47,7 @@ pub enum Protocols {
 }
 
 #[derive(Debug)]
-pub struct Payload {
+pub struct IpPayload {
     pub data: String,
 }
 
@@ -34,14 +59,14 @@ pub struct Ipv4Packet {
     pub ttl: u8,
     pub protocol: Protocols,
     pub total_length: Option<u16>, // Using Option to represent potentially uninitialized state (similar to None in Python).
-    pub payload: Payload,
+    pub payload: IpPayload,
 }
 
 impl Ipv4Packet {
     pub fn new(
         src: Ipv4Addr,
         dest: Ipv4Addr,
-        payload: Payload,
+        payload: IpPayload,
         tos: u8,
         ttl: u8,
         protocol: Protocols,
@@ -68,14 +93,14 @@ pub struct Ipv6Packet {
     pub payload_length: Option<u16>,
     pub flow_label: Option<u32>,
     pub next_header: Option<u8>, // Assuming a similar optional field as Python's None.
-    pub payload: Payload,
+    pub payload: IpPayload,
 }
 
 impl Ipv6Packet {
     pub fn new(
         src: Ipv6Addr,
         dest: Ipv6Addr,
-        payload: Payload,
+        payload: IpPayload,
         traffic_class: u8,
         hop_limit: u8,
         protocol: Protocols,
@@ -101,7 +126,7 @@ pub enum IpPacket {
 }
 
 impl IpPacket {
-    pub fn new(src: IpAddr, dest: IpAddr, payload: Payload, protocol: Protocols) -> Self {
+    pub fn new(src: IpAddr, dest: IpAddr, payload: IpPayload, protocol: Protocols) -> Self {
         match src {
             IpAddr::V4(src) => match dest {
                 IpAddr::V4(dest) => {
