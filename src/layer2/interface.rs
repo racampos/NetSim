@@ -1,8 +1,7 @@
-use super::address::{IpAddr, Ipv4Addr, Ipv6Addr, MacAddress};
-use super::pdu::EthernetFrame;
 use bevy::prelude::*;
-use std::collections::HashMap;
-use std::collections::VecDeque;
+use super::address::MacAddress;
+use crate::layer3::address::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::collections::{HashMap, VecDeque};
 
 #[derive(Component)]
 pub struct SourceInterface;
@@ -145,6 +144,7 @@ impl EthernetInterface {
             Direction::Out => self.out_queue.dequeue(),
         }
     }
+
 
     /// Short-circuits the queues by moving the first item from the in_queue to the out_queue
     /// This is useful for testing purposes

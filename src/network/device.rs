@@ -1,6 +1,4 @@
-use super::address::{IpAddr, Ipv4Addr, Ipv6Addr, MacAddress};
-use super::interface::Interface;
-
+use super::super::layer3::address::IpAddr;
 use bevy::prelude::*;
 
 pub trait NetworkDevice {
@@ -48,7 +46,7 @@ impl Router {
 
 impl NetworkDevice for Router {
     // TODO: implement ping
-    fn ping(&self, ip: IpAddr) -> bool {
+    fn ping(&self, _ip: IpAddr) -> bool {
         true
     }
 }

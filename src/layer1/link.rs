@@ -1,4 +1,4 @@
-use super::interface::{Direction, Interface};
+use super::super::layer2::interface::{Direction, Interface};
 use bevy::prelude::*;
 
 #[derive(Component)]
