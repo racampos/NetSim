@@ -1,7 +1,10 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, transform::commands};
 use super::{
     interface::Interface,
-    pdu::EthernetFrame,
+    pdu::{
+        EthernetFrame,
+        EthernetPayload,
+    }
 };
 
 pub fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
@@ -33,23 +36,41 @@ pub fn update_interfaces(mut query_interface: Query<&mut Interface>) {
     }
 }
 
-pub fn extract_frames_system(
+pub fn process_frames(
+    mut commands: Commands,
     mut interfaces: Query<&mut Interface>,
     frame_query: Query<&EthernetFrame>,
 ) {
     for mut interface in interfaces.iter_mut() {
         if let Interface::Ethernet(int) = &mut *interface {
-            let mut frames = Vec::new();
 
             while !int.in_queue.is_empty() {
-                if let Ok(frame) = frame_query.get(int.in_queue.dequeue().unwrap()) {
-                    frames.push(frame);
+                let frame_entity = int.in_queue.dequeue().unwrap();
+                if let Ok(frame) = frame_query.get(frame_entity) {
+                    if frame.dest == int.mac_address {
+                        commands.entity(frame_entity).despawn();
+                        match &frame.payload {
+                            EthernetPayload::Dummy => {
+                                println!("Received dummy frame");
+                            }
+                            EthernetPayload::ARP => {
+                                println!("Received ARP frame");
+                            }
+                            EthernetPayload::ICMP => {
+                                println!("Received ICMP frame");
+                            }
+                            EthernetPayload::IP(ip_packet) => {
+                                println!("Received IP frame: {:?}", ip_packet);
+                            }
+                            _ => {
+                                println!("Received frame with unknown payload");
+                            }
+                        }
+                    }
                 } else {
                     println!("Failed to find EthernetFrame for entity {:?}", int.in_queue.dequeue().unwrap());
                 }
             }
-            // Now `frames` contains all EthernetFrame components from the in_queue
-            println!("Extracted frames: {:?}", frames);
         }
     }
 }

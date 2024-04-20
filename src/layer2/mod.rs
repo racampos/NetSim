@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use systems::{
     peek_queues,
     update_interfaces,
-    extract_frames_system,
+    process_frames,
 };
 
 pub mod address;
@@ -18,8 +18,8 @@ impl Plugin for Layer2Plugin {
             Update, 
             (
                 peek_queues,
-                update_interfaces,
-                extract_frames_system,
+                // update_interfaces,
+                process_frames,
             ).chain(),
         );
     }

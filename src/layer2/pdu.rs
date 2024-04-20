@@ -20,12 +20,12 @@ struct VlanTag {
 
 #[derive(Component, Debug)]
 pub struct EthernetFrame {
-    dest: MacAddress,
-    src: MacAddress,
-    vlan: Option<VlanTag>,
-    length: [u8; 2],
-    payload: EthernetPayload,
-    fcs: [u8; 4],
+    pub dest: MacAddress,
+    pub src: MacAddress,
+    pub vlan: Option<VlanTag>,
+    pub length: [u8; 2],
+    pub payload: EthernetPayload,
+    pub fcs: [u8; 4],
 }
 
 impl EthernetFrame {
