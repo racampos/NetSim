@@ -2,7 +2,7 @@ use regex::Regex;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Ipv4Addr {
-    pub octets: Vec<u8>,
+    pub octets: [u8; 4],
 }
 
 impl Ipv4Addr {
@@ -14,9 +14,11 @@ impl Ipv4Addr {
         }
         let octets: Vec<u8> = value
             .split(".")
-            .map(|octet| octet.parse().unwrap())
+            .map(|octet| octet.parse::<u8>().unwrap())
             .collect();
-        Self { octets }
+        Self {
+            octets: [octets[0], octets[1], octets[2], octets[3]],
+        }
     }
 
     pub fn to_string(&self) -> String {
@@ -35,8 +37,18 @@ impl Ipv4Addr {
             .map(|(octet, mask_octet)| octet & mask_octet)
             .collect();
         Ipv4Addr {
-            octets: network_octets,
+            octets: [
+                network_octets[0],
+                network_octets[1],
+                network_octets[2],
+                network_octets[3],
+            ],
         }
+    }
+
+    pub fn to_bytes(&self) -> [u8; 4] {
+        let [first, second, third, fourth] = self.octets;
+        [first, second, third, fourth]
     }
 }
 

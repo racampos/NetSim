@@ -1,6 +1,6 @@
+use once_cell::sync::Lazy;
 use rand::Rng;
 use regex::Regex;
-use once_cell::sync::Lazy;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacAddress {
@@ -41,5 +41,15 @@ impl MacAddress {
 
     pub fn is_broadcast(&self) -> bool {
         self.bytes.iter().all(|&byte| byte == 0xFF)
+    }
+
+    pub fn broadcast() -> Self {
+        Self {
+            bytes: [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF],
+        }
+    }
+
+    pub fn to_bytes(&self) -> [u8; 6] {
+        self.bytes
     }
 }

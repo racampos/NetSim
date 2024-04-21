@@ -1,7 +1,8 @@
+use crate::layer2::systems::peek_queues;
 use bevy::prelude::*;
 use systems::transmit_frames;
-use crate::layer2::systems::peek_queues;
 
+pub mod crc;
 pub mod link;
 pub mod systems;
 

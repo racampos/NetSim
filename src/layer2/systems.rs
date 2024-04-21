@@ -1,11 +1,8 @@
-use bevy::{prelude::*, transform::commands};
 use super::{
     interface::Interface,
-    pdu::{
-        EthernetFrame,
-        EthernetPayload,
-    }
+    pdu::{EthernetFrame, EthernetPayload},
 };
+use bevy::{prelude::*, transform::commands};
 
 pub fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
     println!("--------------------------------");
@@ -27,7 +24,6 @@ pub fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
     }
 }
 
-
 pub fn update_interfaces(mut query_interface: Query<&mut Interface>) {
     for mut interface in query_interface.iter_mut() {
         if let Interface::Ethernet(int) = &mut *interface {
@@ -43,7 +39,6 @@ pub fn process_frames(
 ) {
     for mut interface in interfaces.iter_mut() {
         if let Interface::Ethernet(int) = &mut *interface {
-
             while !int.in_queue.is_empty() {
                 let frame_entity = int.in_queue.dequeue().unwrap();
                 if let Ok(frame) = frame_query.get(frame_entity) {
@@ -53,7 +48,7 @@ pub fn process_frames(
                             EthernetPayload::Dummy => {
                                 println!("Received dummy frame");
                             }
-                            EthernetPayload::ARP => {
+                            EthernetPayload::ARP(_arp) => {
                                 println!("Received ARP frame");
                             }
                             EthernetPayload::ICMP => {
@@ -68,7 +63,10 @@ pub fn process_frames(
                         }
                     }
                 } else {
-                    println!("Failed to find EthernetFrame for entity {:?}", int.in_queue.dequeue().unwrap());
+                    println!(
+                        "Failed to find EthernetFrame for entity {:?}",
+                        int.in_queue.dequeue().unwrap()
+                    );
                 }
             }
         }
