@@ -1,11 +1,16 @@
 use super::address::MacAddress;
 use super::arp::{ArpOperation, ArpPacket};
-use crate::layer3::{address::Ipv4Addr, pdu::IpPacket};
+use crate::layer1::crc::crc32;
+use crate::layer3::{
+    address::Ipv4Addr,
+    pdu::{Ipv4Packet, Ipv6Packet},
+};
 use bevy::prelude::*;
 
 #[derive(Debug)]
 pub enum EthernetPayload {
-    IP(IpPacket),
+    IPv4(Ipv4Packet),
+    IPv6(Ipv6Packet),
     ICMP,
     ARP(ArpPacket),
     Dummy,
@@ -14,7 +19,8 @@ pub enum EthernetPayload {
 impl EthernetPayload {
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
-            EthernetPayload::IP(ip_packet) => ip_packet.to_bytes(),
+            EthernetPayload::IPv4(packet) => packet.to_bytes(),
+            EthernetPayload::IPv6(packet) => unimplemented!(),
             EthernetPayload::ICMP => unimplemented!(),
             EthernetPayload::ARP(arp_packet) => arp_packet.to_bytes(),
             EthernetPayload::Dummy => Vec::new(),
@@ -41,7 +47,7 @@ impl VlanTag {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Ethertype {
     IPv4,    // 0x0800
     IPv6,    // 0x86DD
@@ -83,15 +89,15 @@ impl EthernetFrame {
     }
 
     pub fn new_arp(src: MacAddress, sender_ip: Ipv4Addr, target_ip: Ipv4Addr) -> Self {
-        let arp_packet = ArpPacket::new(ArpOperation::Request, src.clone(), sender_ip, target_ip);
-        Self {
-            dest: MacAddress::broadcast(),
+        let mut frame = Self::new(src.clone(), MacAddress::broadcast());
+        frame.payload = EthernetPayload::ARP(ArpPacket::new(
+            ArpOperation::Request,
             src,
-            vlan: None,
-            ethertype: Ethertype::ARP,
-            payload: EthernetPayload::ARP(arp_packet),
-            fcs: [0; 4],
-        }
+            sender_ip,
+            target_ip,
+        ));
+        frame.fcs = crc32(&frame.to_bytes());
+        frame
     }
 
     // Converts the Ethernet frame to a byte vector excluding the FCS

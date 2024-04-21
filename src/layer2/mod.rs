@@ -12,13 +12,8 @@ pub struct Layer2Plugin;
 impl Plugin for Layer2Plugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
-            (
-                peek_queues,
-                // update_interfaces,
-                process_frames,
-            )
-                .chain(),
+            FixedUpdate,
+            (peek_queues, update_interfaces, process_frames).chain(),
         );
     }
 }

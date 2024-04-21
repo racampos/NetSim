@@ -1,18 +1,6 @@
 use super::{address::MacAddress, pdu::Ethertype};
 use crate::layer3::address::Ipv4Addr;
-
-#[derive(Debug)]
-pub struct ArpPacket {
-    pub hardware_type: ArpHardwareType,
-    pub protocol_type: Ethertype,
-    pub hardware_size: u8,
-    pub protocol_size: u8,
-    pub operation: ArpOperation,
-    pub sender_mac: MacAddress,
-    pub sender_ip: Ipv4Addr,
-    pub target_mac: MacAddress,
-    pub target_ip: Ipv4Addr,
-}
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum ArpOperation {
@@ -28,7 +16,7 @@ impl ArpOperation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ArpHardwareType {
     Ethernet, // 0x0001
 }
@@ -39,6 +27,19 @@ impl ArpHardwareType {
             ArpHardwareType::Ethernet => [0x00, 0x01],
         }
     }
+}
+
+#[derive(Debug)]
+pub struct ArpPacket {
+    pub hardware_type: ArpHardwareType,
+    pub protocol_type: Ethertype,
+    pub hardware_size: u8,
+    pub protocol_size: u8,
+    pub operation: ArpOperation,
+    pub sender_mac: MacAddress,
+    pub sender_ip: Ipv4Addr,
+    pub target_mac: MacAddress,
+    pub target_ip: Ipv4Addr,
 }
 
 impl ArpPacket {
@@ -73,5 +74,39 @@ impl ArpPacket {
         bytes.extend_from_slice(&self.target_mac.to_bytes());
         bytes.extend_from_slice(&self.target_ip.to_bytes());
         bytes
+    }
+
+    pub fn create_reply(&self, sender_mac: MacAddress) -> Self {
+        Self {
+            hardware_type: self.hardware_type,
+            protocol_type: self.protocol_type,
+            hardware_size: self.hardware_size,
+            protocol_size: self.protocol_size,
+            operation: ArpOperation::Reply,
+            sender_mac: sender_mac,
+            sender_ip: self.target_ip.clone(),
+            target_mac: self.sender_mac.clone(),
+            target_ip: self.sender_ip.clone(),
+        }
+    }
+}
+
+pub struct ArpTable {
+    entries: HashMap<Ipv4Addr, MacAddress>,
+}
+
+impl ArpTable {
+    pub fn new() -> Self {
+        Self {
+            entries: HashMap::new(),
+        }
+    }
+
+    pub fn add_entry(&mut self, ip: Ipv4Addr, mac: MacAddress) {
+        self.entries.insert(ip, mac);
+    }
+
+    pub fn get_mac_address(&self, ip: &Ipv4Addr) -> Option<MacAddress> {
+        self.entries.get(ip).cloned()
     }
 }

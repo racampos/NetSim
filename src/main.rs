@@ -10,35 +10,11 @@ use netsim::layer2::{
     pdu::{EthernetFrame, EthernetPayload},
     Layer2Plugin,
 };
-
-fn make_crc_table() -> [u32; 256] {
-    let mut table = [0u32; 256];
-    let polynomial = 0xedb88320;
-    for byte in 0..256 {
-        let mut crc = byte as u32;
-        for _ in 0..8 {
-            if crc & 1 != 0 {
-                crc = (crc >> 1) ^ polynomial;
-            } else {
-                crc >>= 1;
-            }
-        }
-        table[byte] = crc;
-    }
-    table
-}
-
-fn print_crc_table() {
-    let table = make_crc_table();
-    println!("static CRC_TABLE: [u32; 256] = [");
-    for crc in &table {
-        print!("0x{:08x}, ", crc);
-    }
-    println!("];");
-}
+use netsim::layer3::address::Ipv4Addr;
 
 fn main() {
     App::new()
+        .insert_resource(Time::<Fixed>::from_seconds(1.0))
         .add_plugins((DefaultPlugins, Layer1Plugin, Layer2Plugin))
         .add_systems(
             Startup,
@@ -68,7 +44,11 @@ fn setup(mut commands: Commands) {
     ));
 
     commands.spawn((
-        EthernetFrame::new(mac_1, MacAddress::broadcast()),
+        EthernetFrame::new_arp(
+            mac_1,
+            Ipv4Addr::new("192.168.1.1"),
+            Ipv4Addr::new("192.168.1.2"),
+        ),
         Name::new("ARP Frame"),
     ));
 }

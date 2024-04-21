@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Ipv4Addr {
@@ -6,7 +7,8 @@ pub struct Ipv4Addr {
 }
 
 impl Ipv4Addr {
-    pub fn new(value: String) -> Self {
+    pub fn new(value: &str) -> Self {
+        let value = value.to_string();
         let ipv4_address_regex = Regex::new(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$").unwrap();
         // TODO: implement a custom error type
         if !ipv4_address_regex.is_match(&value) {
@@ -52,19 +54,30 @@ impl Ipv4Addr {
     }
 }
 
+impl fmt::Display for Ipv4Addr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}.{}.{}.{}",
+            self.octets[0], self.octets[1], self.octets[2], self.octets[3]
+        )
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Ipv6Addr {
     pub value: String,
 }
 
 impl Ipv6Addr {
-    pub fn new(value: String) -> Self {
+    pub fn new(value: &str) -> Self {
         // TODO: Consider using Rust's built-in Ipv6Addr type
         // use std::net::Ipv6Addr;
         // Something like this:
         // fn validate_ipv6_address(address: &str) -> bool {
         //    address.parse::<Ipv6Addr>().is_ok()
         // }
+        let value = value.to_string();
         let ipv6_address_regex = Regex::new(r"^(?:[0-9A-Fa-f]{1,4}:){7}(?:[0-9A-Fa-f]{1,4}|:)|(?:[0-9A-Fa-f]{1,4}:){6}(?::[0-9A-Fa-f]{1,4}|:[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:)|(?:[0-9A-Fa-f]{1,4}:){5}(?::[0-9A-Fa-f]{1,4}|(?::[0-9A-Fa-f]{1,4}){1,2}|:[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:)|(?:[0-9A-Fa-f]{1,4}:){4}(?::[0-9A-Fa-f]{1,4}|(?::[0-9A-Fa-f]{1,4}){1,3}|:[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:)|(?:[0-9A-Fa-f]{1,4}:){3}(?::[0-9A-Fa-f]{1,4}|(?::[0-9A-Fa-f]{1,4}){1,4}|:[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:)|(?:[0-9A-Fa-f]{1,4}:){2}(?::[0-9A-Fa-f]{1,4}|(?::[0-9A-Fa-f]{1,4}){1,5}|:[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:)|(?:[0-9A-Fa-f]{1,4}:)(?::[0-9A-Fa-f]{1,4}|(?::[0-9A-Fa-f]{1,4}){1,6}|:[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:)|(?:::(?:[0-9A-Fa-f]{1,4}|(?::[0-9A-Fa-f]{1,4}){1,7}|[0-9A-Fa-f]{1,4}:\d+\.\d+\.\d+\.\d+|:))$
         ").unwrap();
         // TODO: implement a custom error type
@@ -81,7 +94,7 @@ pub enum IpAddr {
 }
 
 impl IpAddr {
-    pub fn new(value: String) -> Self {
+    pub fn new(value: &str) -> Self {
         if value.contains(":") {
             IpAddr::V6(Ipv6Addr::new(value))
         } else {

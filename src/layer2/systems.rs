@@ -1,8 +1,5 @@
-use super::{
-    interface::Interface,
-    pdu::{EthernetFrame, EthernetPayload},
-};
-use bevy::{prelude::*, transform::commands};
+use super::{address::MacAddress, interface::Interface, pdu::EthernetFrame};
+use bevy::prelude::*;
 
 pub fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
     println!("--------------------------------");
@@ -27,7 +24,7 @@ pub fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
 pub fn update_interfaces(mut query_interface: Query<&mut Interface>) {
     for mut interface in query_interface.iter_mut() {
         if let Interface::Ethernet(int) = &mut *interface {
-            int.short_circuit_queues();
+            // int.short_circuit_queues();
         }
     }
 }
@@ -42,25 +39,9 @@ pub fn process_frames(
             while !int.in_queue.is_empty() {
                 let frame_entity = int.in_queue.dequeue().unwrap();
                 if let Ok(frame) = frame_query.get(frame_entity) {
-                    if frame.dest == int.mac_address {
+                    if frame.dest == int.mac_address || frame.dest == MacAddress::broadcast() {
                         commands.entity(frame_entity).despawn();
-                        match &frame.payload {
-                            EthernetPayload::Dummy => {
-                                println!("Received dummy frame");
-                            }
-                            EthernetPayload::ARP(_arp) => {
-                                println!("Received ARP frame");
-                            }
-                            EthernetPayload::ICMP => {
-                                println!("Received ICMP frame");
-                            }
-                            EthernetPayload::IP(ip_packet) => {
-                                println!("Received IP frame: {:?}", ip_packet);
-                            }
-                            _ => {
-                                println!("Received frame with unknown payload");
-                            }
-                        }
+                        int.process_frame(frame);
                     }
                 } else {
                     println!(

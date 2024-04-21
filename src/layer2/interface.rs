@@ -1,7 +1,11 @@
-use bevy::prelude::*;
-use super::address::MacAddress;
+use super::{
+    address::MacAddress,
+    arp::ArpTable,
+    pdu::{EthernetFrame, EthernetPayload},
+};
 use crate::layer3::address::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::collections::{HashMap, VecDeque};
+use bevy::prelude::*;
+use std::collections::VecDeque;
 
 #[derive(Component)]
 pub struct SourceInterface;
@@ -72,26 +76,6 @@ impl Interface {
     }
 }
 
-pub struct ArpTable {
-    entries: HashMap<Ipv4Addr, MacAddress>,
-}
-
-impl ArpTable {
-    pub fn new() -> Self {
-        Self {
-            entries: HashMap::new(),
-        }
-    }
-
-    pub fn add_entry(&mut self, ip: Ipv4Addr, mac: MacAddress) {
-        self.entries.insert(ip, mac);
-    }
-
-    pub fn get_mac_address(&self, ip: &Ipv4Addr) -> Option<MacAddress> {
-        self.entries.get(ip).cloned()
-    }
-}
-
 #[derive(Component)]
 pub struct EthernetInterface {
     pub interface_type: InterfaceType,
@@ -145,6 +129,29 @@ impl EthernetInterface {
         }
     }
 
+    pub fn process_frame(&mut self, frame: &EthernetFrame) {
+        match &frame.payload {
+            EthernetPayload::Dummy => {
+                println!("Received dummy frame");
+            }
+            EthernetPayload::ARP(arp) => {
+                println!("");
+                println!("Received ARP frame");
+                let target_ip = &arp.target_ip;
+                println!("  Who has IP address {}?", target_ip);
+                let reply_arp = arp.create_reply(self.mac_address.clone());
+            }
+            EthernetPayload::ICMP => {
+                println!("Received ICMP frame");
+            }
+            EthernetPayload::IPv4(ip_packet) => {
+                println!("Received IP frame: {:?}", ip_packet);
+            }
+            _ => {
+                println!("Received frame with unknown payload");
+            }
+        }
+    }
 
     /// Short-circuits the queues by moving the first item from the in_queue to the out_queue
     /// This is useful for testing purposes

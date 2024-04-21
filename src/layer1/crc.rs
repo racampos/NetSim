@@ -34,11 +34,19 @@ static CRC_TABLE: [u32; 256] = [
     0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 ];
 
-pub fn crc32(data: &[u8]) -> u32 {
+pub fn crc32(data: &[u8]) -> [u8; 4] {
     let mut crc: u32 = 0xffffffff; // Initial value
     for &byte in data {
         let index = ((crc as u8) ^ byte) as usize;
         crc = (crc >> 8) ^ CRC_TABLE[index];
     }
-    crc ^ 0xffffffff // Final XOR
+    crc ^= 0xffffffff; // Final XOR
+
+    // Convert u32 to [u8; 4]
+    [
+        (crc >> 24) as u8, // Extract the first byte
+        (crc >> 16) as u8, // Extract the second byte
+        (crc >> 8) as u8,  // Extract the third byte
+        crc as u8,         // Extract the fourth byte
+    ]
 }
