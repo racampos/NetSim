@@ -88,6 +88,12 @@ impl Ipv6Addr {
     }
 }
 
+impl fmt::Display for Ipv6Addr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr),

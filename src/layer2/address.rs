@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 use rand::Rng;
 use regex::Regex;
+use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacAddress {
@@ -51,5 +52,20 @@ impl MacAddress {
 
     pub fn to_bytes(&self) -> [u8; 6] {
         self.bytes
+    }
+}
+
+impl fmt::Display for MacAddress {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+            self.bytes[0],
+            self.bytes[1],
+            self.bytes[2],
+            self.bytes[3],
+            self.bytes[4],
+            self.bytes[5]
+        )
     }
 }

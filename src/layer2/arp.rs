@@ -1,8 +1,9 @@
 use super::{address::MacAddress, pdu::Ethertype};
 use crate::layer3::address::Ipv4Addr;
 use std::collections::HashMap;
+use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ArpOperation {
     Request, // 0x0001
     Reply,   // 0x0002
@@ -12,6 +13,15 @@ impl ArpOperation {
         match self {
             ArpOperation::Request => [0x00, 0x01],
             ArpOperation::Reply => [0x00, 0x02],
+        }
+    }
+}
+
+impl fmt::Display for ArpOperation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            ArpOperation::Request => write!(f, "Request (0x0001)"),
+            ArpOperation::Reply => write!(f, "Reply (0x0002)"),
         }
     }
 }
@@ -29,7 +39,15 @@ impl ArpHardwareType {
     }
 }
 
-#[derive(Debug)]
+impl fmt::Display for ArpHardwareType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            ArpHardwareType::Ethernet => write!(f, "Ethernet (0x0001)"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ArpPacket {
     pub hardware_type: ArpHardwareType,
     pub protocol_type: Ethertype,
@@ -91,6 +109,34 @@ impl ArpPacket {
     }
 }
 
+impl fmt::Display for ArpPacket {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ARP Packet:\n\
+            \t\tHardware Type: {}\n\
+            \t\tProtocol Type: {}\n\
+            \t\tHardware Size: {}\n\
+            \t\tProtocol Size: {}\n\
+            \t\tOperation: {}\n\
+            \t\tSender MAC: {}\n\
+            \t\tSender IP: {}\n\
+            \t\tTarget MAC: {}\n\
+            \t\tTarget IP: {}",
+            self.hardware_type,
+            self.protocol_type,
+            self.hardware_size,
+            self.protocol_size,
+            self.operation,
+            self.sender_mac,
+            self.sender_ip,
+            self.target_mac,
+            self.target_ip
+        )
+    }
+}
+
+#[derive(Debug)]
 pub struct ArpTable {
     entries: HashMap<Ipv4Addr, MacAddress>,
 }
@@ -108,5 +154,29 @@ impl ArpTable {
 
     pub fn get_mac_address(&self, ip: &Ipv4Addr) -> Option<MacAddress> {
         self.entries.get(ip).cloned()
+    }
+}
+
+impl fmt::Display for ArpTable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Determine the maximum width of the IP addresses for alignment
+        let max_ip_width = self
+            .entries
+            .keys()
+            .map(|ip| ip.to_string().len())
+            .max()
+            .unwrap_or(0);
+
+        // Create a header
+        let header = format!("{:<max_ip_width$} | MAC Address", "IP Address");
+        writeln!(f, "{}", header)?;
+        writeln!(f, "{}", "-".repeat(header.len()))?;
+
+        // Print each entry
+        for (ip, mac) in &self.entries {
+            writeln!(f, "{:<max_ip_width$} | {}", ip, mac)?;
+        }
+
+        Ok(())
     }
 }

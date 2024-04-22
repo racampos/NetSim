@@ -6,6 +6,7 @@ use crate::layer3::{
     pdu::{Ipv4Packet, Ipv6Packet},
 };
 use bevy::prelude::*;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum EthernetPayload {
@@ -24,6 +25,18 @@ impl EthernetPayload {
             EthernetPayload::ICMP => unimplemented!(),
             EthernetPayload::ARP(arp_packet) => arp_packet.to_bytes(),
             EthernetPayload::Dummy => Vec::new(),
+        }
+    }
+}
+
+impl fmt::Display for EthernetPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            EthernetPayload::IPv4(packet) => write!(f, "{}", packet),
+            EthernetPayload::IPv6(packet) => write!(f, "{}", packet),
+            EthernetPayload::ICMP => write!(f, "ICMP"),
+            EthernetPayload::ARP(packet) => write!(f, "{}", packet),
+            EthernetPayload::Dummy => write!(f, "Dummy Payload"),
         }
     }
 }
@@ -66,6 +79,12 @@ impl Ethertype {
     }
 }
 
+impl fmt::Display for Ethertype {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ARP")
+    }
+}
+
 #[derive(Component, Debug)]
 pub struct EthernetFrame {
     pub dest: MacAddress,
@@ -88,14 +107,25 @@ impl EthernetFrame {
         }
     }
 
-    pub fn new_arp(src: MacAddress, sender_ip: Ipv4Addr, target_ip: Ipv4Addr) -> Self {
+    pub fn arp(src: MacAddress, sender_ip: Ipv4Addr, target_ip: Ipv4Addr) -> Self {
         let mut frame = Self::new(src.clone(), MacAddress::broadcast());
+        frame.ethertype = Ethertype::ARP;
         frame.payload = EthernetPayload::ARP(ArpPacket::new(
             ArpOperation::Request,
             src,
             sender_ip,
             target_ip,
         ));
+        frame.fcs = crc32(&frame.to_bytes());
+        frame
+    }
+
+    pub fn arp_reply(&self, arp: &ArpPacket, sender_mac: MacAddress) -> Self {
+        let arp_reply = arp.create_reply(sender_mac);
+        let payload = EthernetPayload::ARP(arp_reply.clone());
+        let mut frame = Self::new(arp_reply.sender_mac, arp_reply.target_mac);
+        frame.payload = payload;
+        frame.ethertype = Ethertype::ARP;
         frame.fcs = crc32(&frame.to_bytes());
         frame
     }
@@ -111,5 +141,29 @@ impl EthernetFrame {
         bytes.extend_from_slice(&self.ethertype.get_value());
         bytes.extend_from_slice(&self.payload.to_bytes());
         bytes
+    }
+}
+
+impl fmt::Display for EthernetFrame {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "EthernetFrame\n\
+            \tdest: MacAddress: {}\n\
+            \tsrc: MacAddress: {}\n\
+            \tvlan: {:?}\n\
+            \tethertype: {}\n\
+            \tpayload: {}\n\
+            \tfcs: [{}, {}, {}, {}]",
+            self.dest,
+            self.src,
+            self.vlan,
+            self.ethertype,
+            self.payload,
+            self.fcs[0],
+            self.fcs[1],
+            self.fcs[2],
+            self.fcs[3]
+        )
     }
 }

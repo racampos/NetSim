@@ -42,27 +42,19 @@ fn setup(mut commands: Commands) {
         Name::new("FE2"),
         DestinationInterface,
     ));
-
-    commands.spawn((
-        EthernetFrame::new_arp(
-            mac_1,
-            Ipv4Addr::new("192.168.1.1"),
-            Ipv4Addr::new("192.168.1.2"),
-        ),
-        Name::new("ARP Frame"),
-    ));
 }
 
 fn add_frame_to_source_interface(
-    query_frame: Query<(Entity, &EthernetFrame)>,
     mut query_interface: Query<&mut Interface, With<SourceInterface>>,
 ) {
-    let (frame_entity, _frame) = query_frame.single();
     let mut interface = query_interface.single_mut();
-    println!("Original frame: {:?}", frame_entity);
-
     if let Interface::Ethernet(int) = &mut *interface {
-        int.enqueue_frame(frame_entity, Direction::Out);
+        let frame = EthernetFrame::arp(
+            int.mac_address.clone(),
+            Ipv4Addr::new("192.168.1.1"),
+            Ipv4Addr::new("192.168.1.2"),
+        );
+        int.enqueue_frame(frame, Direction::Out);
     }
 }
 

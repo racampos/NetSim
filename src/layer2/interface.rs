@@ -1,6 +1,6 @@
 use super::{
     address::MacAddress,
-    arp::ArpTable,
+    arp::{ArpOperation, ArpTable},
     pdu::{EthernetFrame, EthernetPayload},
 };
 use crate::layer3::address::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -84,8 +84,8 @@ pub struct EthernetInterface {
     pub ipv4_address: Option<Ipv4Addr>,
     pub ipv6_addresses: Vec<Ipv6Addr>,
     pub arp_table: ArpTable,
-    pub in_queue: Queue<Entity>,
-    pub out_queue: Queue<Entity>,
+    pub in_queue: Queue<EthernetFrame>,
+    pub out_queue: Queue<EthernetFrame>,
 }
 
 pub enum Direction {
@@ -115,14 +115,14 @@ impl EthernetInterface {
         self.ipv6_addresses.push(ipv6_address);
     }
 
-    pub fn enqueue_frame(&mut self, frame: Entity, direction: Direction) {
+    pub fn enqueue_frame(&mut self, frame: EthernetFrame, direction: Direction) {
         match direction {
             Direction::In => self.in_queue.enqueue(frame),
             Direction::Out => self.out_queue.enqueue(frame),
         }
     }
 
-    pub fn dequeue_frame(&mut self, direction: Direction) -> Option<Entity> {
+    pub fn dequeue_frame(&mut self, direction: Direction) -> Option<EthernetFrame> {
         match direction {
             Direction::In => self.in_queue.dequeue(),
             Direction::Out => self.out_queue.dequeue(),
@@ -134,13 +134,25 @@ impl EthernetInterface {
             EthernetPayload::Dummy => {
                 println!("Received dummy frame");
             }
-            EthernetPayload::ARP(arp) => {
-                println!("");
-                println!("Received ARP frame");
-                let target_ip = &arp.target_ip;
-                println!("  Who has IP address {}?", target_ip);
-                let reply_arp = arp.create_reply(self.mac_address.clone());
-            }
+            EthernetPayload::ARP(arp) => match arp.operation {
+                ArpOperation::Request => {
+                    println!("");
+                    println!("Received ARP request");
+                    let target_ip = &arp.target_ip;
+                    println!("  Who has IP address {}?", target_ip);
+                    let reply_frame = frame.arp_reply(arp, self.mac_address.clone());
+                    self.enqueue_frame(reply_frame, Direction::Out);
+                }
+                ArpOperation::Reply => {
+                    println!("");
+                    println!("Received ARP reply");
+                    let sender_ip = &arp.sender_ip;
+                    let sender_mac = &arp.sender_mac;
+                    println!("  {} is at {}", sender_ip, sender_mac);
+                    self.arp_table
+                        .add_entry(sender_ip.clone(), sender_mac.clone());
+                }
+            },
             EthernetPayload::ICMP => {
                 println!("Received ICMP frame");
             }

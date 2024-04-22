@@ -1,6 +1,7 @@
 use super::address::{IpAddr, Ipv4Addr, Ipv6Addr};
 use crate::layer2::address::MacAddress;
 use bevy::prelude::*;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum Protocols {
@@ -43,6 +44,28 @@ impl Protocols {
     }
 }
 
+impl fmt::Display for Protocols {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Protocols::ICMP => write!(f, "ICMP"),
+            Protocols::IGMP => write!(f, "IGMP"),
+            Protocols::TCP => write!(f, "TCP"),
+            Protocols::UDP => write!(f, "UDP"),
+            Protocols::GRE => write!(f, "GRE"),
+            Protocols::ESP => write!(f, "ESP"),
+            Protocols::AH => write!(f, "AH"),
+            Protocols::EIGRP => write!(f, "EIGRP"),
+            Protocols::OSPF => write!(f, "OSPF"),
+            Protocols::PIM => write!(f, "PIM"),
+            Protocols::VRRP => write!(f, "VRRP"),
+            Protocols::L2TP => write!(f, "L2TP"),
+            Protocols::ISIS => write!(f, "ISIS"),
+            Protocols::MPLS => write!(f, "MPLS"),
+            Protocols::Unknown => write!(f, "Unknown"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct IpPayload {
     pub data: Vec<u8>,
@@ -63,6 +86,28 @@ pub struct Ipv4Header {
     pub header_checksum: u16,
     pub src: Ipv4Addr,
     pub dest: Ipv4Addr,
+}
+
+impl fmt::Display for Ipv4Header {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "IPv4Header {{ version: {}, IHL: {}, DSCP: {}, ECN: {}, length: {}, id: {}, flags: {}, offset: {}, TTL: {}, protocol: {}, checksum: {:04X}, src: {}, dest: {} }}",
+            self.version,
+            self.ihl,
+            self.dscp,
+            self.ecn,
+            self.total_length,
+            self.identification,
+            self.flags,
+            self.fragment_offset,
+            self.ttl,
+            self.protocol,
+            self.header_checksum,
+            self.src,
+            self.dest
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -114,6 +159,12 @@ impl Ipv4Packet {
     }
 }
 
+impl fmt::Display for Ipv4Packet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "IPv4Packet {{ header: {}}}", self.header)
+    }
+}
+
 #[derive(Debug)]
 pub struct Ipv6Packet {
     pub src: Ipv6Addr,
@@ -147,6 +198,21 @@ impl Ipv6Packet {
             next_header: None,
             payload,
         }
+    }
+}
+
+impl fmt::Display for Ipv6Packet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "IPv6Packet {{ src: {}, dest: {}, traffic_class: {:02X}, hop_limit: {}, protocol: {}, payload_length: {:?}, flow_label: {:?}, next_header: {:?} }}",
+            self.src,
+            self.dest,
+            self.traffic_class,
+            self.hop_limit,
+            self.protocol,
+            self.payload_length,
+            self.flow_label,
+            self.next_header
+        )
     }
 }
 
