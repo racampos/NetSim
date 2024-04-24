@@ -8,7 +8,7 @@ use crate::layer3::{
 use bevy::prelude::*;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EthernetPayload {
     IPv4(Ipv4Packet),
     IPv6(Ipv6Packet),
@@ -41,7 +41,7 @@ impl fmt::Display for EthernetPayload {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct VlanTag {
     tpid: [u8; 2],
     pcp: u8,
@@ -85,7 +85,7 @@ impl fmt::Display for Ethertype {
     }
 }
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone)]
 pub struct EthernetFrame {
     pub dest: MacAddress,
     pub src: MacAddress,
@@ -107,7 +107,7 @@ impl EthernetFrame {
         }
     }
 
-    pub fn arp(src: MacAddress, sender_ip: Ipv4Addr, target_ip: Ipv4Addr) -> Self {
+    pub fn arp_request(src: MacAddress, sender_ip: Ipv4Addr, target_ip: Ipv4Addr) -> Self {
         let mut frame = Self::new(src.clone(), MacAddress::broadcast());
         frame.ethertype = Ethertype::ARP;
         frame.payload = EthernetPayload::ARP(ArpPacket::new(

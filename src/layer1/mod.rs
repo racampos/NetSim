@@ -5,6 +5,7 @@ use systems::transmit_frames;
 pub mod crc;
 pub mod link;
 pub mod systems;
+pub mod hub;
 
 pub struct Layer1Plugin;
 

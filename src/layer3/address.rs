@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Copy)]
 pub struct Ipv4Addr {
     pub octets: [u8; 4],
 }

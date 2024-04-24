@@ -6,7 +6,7 @@ pub fn peek_queues(query_interface: Query<(&mut Interface, &Name)>) {
     println!("Time step");
     for (interface, name) in query_interface.iter() {
         if let Interface::Ethernet(int) = interface {
-            println!("  Peeking queues for interface {:?}", name);
+            println!("\n  Peeking queues for interface {:?}", name);
             let frame = int.in_queue.peek();
             match frame {
                 Some(f) => println!("    Incoming queue: {}", f),
@@ -37,6 +37,10 @@ pub fn process_frames(mut interfaces: Query<&mut Interface>) {
                 if frame.dest == int.mac_address || frame.dest == MacAddress::broadcast() {
                     int.process_frame(&frame);
                     println!("\nARP Table for interface:\n{}", int.arp_table);
+                } else {
+                    println!(
+                        "\nDropping frame with destination {} not matching interface MAC address {}",
+                        frame.dest, int.mac_address)
                 }
             }
         }

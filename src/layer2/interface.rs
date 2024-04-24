@@ -129,6 +129,18 @@ impl EthernetInterface {
         }
     }
 
+    pub fn send_arp_request(&mut self, target_ip: Ipv4Addr) {
+        if let Some(int_address) = &self.ipv4_address {
+            let arp_frame = EthernetFrame::arp_request(
+                self.mac_address.clone(),
+                *int_address,
+                target_ip,
+            );
+            self.enqueue_frame(arp_frame, Direction::Out);
+        } else {
+            println!("Interface does not have an IP address");}
+    }
+
     pub fn process_frame(&mut self, frame: &EthernetFrame) {
         match &frame.payload {
             EthernetPayload::Dummy => {
@@ -140,8 +152,15 @@ impl EthernetInterface {
                     println!("Received ARP request");
                     let target_ip = &arp.target_ip;
                     println!("  Who has IP address {}?", target_ip);
-                    let reply_frame = frame.arp_reply(arp, self.mac_address.clone());
-                    self.enqueue_frame(reply_frame, Direction::Out);
+                    if let Some(int_address) = &self.ipv4_address {
+                        if target_ip == int_address {
+                            println!("  I have IP address {}", target_ip);
+                            let reply_frame = frame.arp_reply(arp, self.mac_address.clone());
+                            self.enqueue_frame(reply_frame, Direction::Out);
+                        } else {
+                            println!("  I don't have IP address {}", target_ip);
+                        }
+                    }
                 }
                 ArpOperation::Reply => {
                     println!("");

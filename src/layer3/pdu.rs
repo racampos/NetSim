@@ -3,7 +3,7 @@ use crate::layer2::address::MacAddress;
 use bevy::prelude::*;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Protocols {
     ICMP,
     IGMP,
@@ -66,12 +66,12 @@ impl fmt::Display for Protocols {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IpPayload {
     pub data: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ipv4Header {
     pub version: u8,
     pub ihl: u8,
@@ -110,7 +110,7 @@ impl fmt::Display for Ipv4Header {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ipv4Packet {
     pub header: Ipv4Header,
     pub payload: IpPayload,
@@ -165,7 +165,7 @@ impl fmt::Display for Ipv4Packet {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ipv6Packet {
     pub src: Ipv6Addr,
     pub dest: Ipv6Addr,
